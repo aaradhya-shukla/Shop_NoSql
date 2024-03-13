@@ -1,4 +1,5 @@
 const mongodb = require('mongodb');
+const { NULL } = require('mysql2/lib/constants/types');
 const getdb = require('../util/database').getDb;
 
 class User{
@@ -42,6 +43,50 @@ class User{
     const db = getdb();
     return db.collection('users').updateOne({_id: new mongodb.ObjectId(this._id)}, {$set: {cart: updatedCart}})
 
+  }
+
+  getCart(){
+    const db = getdb();
+    let productIds = this.cart.items.map(i =>{
+      if(i.quantity>0){
+        return i.productId;
+      }
+    })
+    productIds = productIds.filter(i=>{
+      return i!=NULL;
+    })
+    // we are  quering all the documents with the ids in the array
+    // using the $in operator
+    // this will give us a cursor with all the matching products
+    return db
+    .collection('products')
+    .find({_id: {$in: productIds}})
+    .toArray()
+    .then(products =>{
+      return products.map(p=>{
+        return {...p,
+           quantity:this.cart.items.find(i=>{
+          return i.productId.toString() === p._id.toString();
+        }).quantity }
+      })
+    })    
+  }
+
+  delete(prodId){
+    let updatedCartItem = this.cart.items.map(i=>{
+      if (i.productId.toString()===prodId.toString()){
+        i.quantity-=1;
+      }
+      return i
+    })
+    updatedCartItem = updatedCartItem.filter(i=>{
+      return i.quantity>0;
+    })
+    const updatedCart = {
+      items:updatedCartItem
+    }
+    const db = getdb();
+    return db.collection('users').updateOne({_id: new mongodb.ObjectId(this._id)}, {$set: {cart: updatedCart}})
   }
 
 }
