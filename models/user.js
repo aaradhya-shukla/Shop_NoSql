@@ -89,6 +89,32 @@ class User{
     return db.collection('users').updateOne({_id: new mongodb.ObjectId(this._id)}, {$set: {cart: updatedCart}})
   }
 
+addToOrder(){
+  const db = getdb();
+  return this.getCart().then(products=>{
+    const order = {
+      items: products,
+      user:{
+        _id: new mongodb.ObjectId(this._id),
+        name: this.name
+      }
+    }
+    return db.collection('orders').insertOne(order)
+  })
+  .then(result=>{
+    this.cart = {items: []};
+    return db.collection('users')
+    .updateOne(
+      {_id: new mongodb.ObjectId(this._id)},
+       {$set: {cart: this.cart}})
+  })
+}
+
+getOrders(){
+  const db = getdb();
+  return db.collection('orders').find({"user._id": new mongodb.ObjectId(this._id)}).toArray();
+}
+
 }
 
 module.exports = User;
