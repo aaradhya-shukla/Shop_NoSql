@@ -1,6 +1,4 @@
-const mongodb = require('mongodb');
-const { NULL } = require('mysql2/lib/constants/types');
-const getdb = require('../util/database').getDb;
+
 
 class User{
   constructor(name,email,cart, id){
